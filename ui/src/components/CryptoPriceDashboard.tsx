@@ -1,19 +1,60 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+
+const VENUES = ['Binance', 'Deribit', 'OKX'];
 
 const CryptoPriceDashboard = () => {
   const [activeTab, setActiveTab] = useState('top');
   const [selectedAsset, setSelectedAsset] = useState('BTC');
+  const [venueData, setVenueData] = useState({});
+  const websockets = useRef({});
 
-  const venues = [
-    { name: 'Binance', quantity: 1.28960000, bestBid: 3853.20, lastPrice: 3853.20, bestOffer: 3853.21, offerQuantity: 0.33 },
-    { name: 'Deribit', quantity: 1.28960000, bestBid: 3853.20, lastPrice: 3853.20, bestOffer: 3853.21, offerQuantity: 0.33 },
-    { name: 'OKX', quantity: 1.28960000, bestBid: 3853.20, lastPrice: 3853.20, bestOffer: 3853.21, offerQuantity: 0.33 },
-  ];
+  useEffect(() => {
+    // Close all existing WebSocket connections
+    Object.values(websockets.current).forEach(ws => ws.close());
+    websockets.current = {};
+
+    // Create new WebSocket connections for each venue
+    VENUES.forEach(venue => {
+      const ws = new WebSocket(`ws://localhost:8080/ws/${venue.toLowerCase()}/${selectedAsset.toLowerCase()}`);
+      
+      ws.onopen = () => {
+        console.log(`Connected to ${venue} for ${selectedAsset}`);
+        ws.send(JSON.stringify({ action: 'subscribe', ticker: selectedAsset }));
+      };
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        setVenueData(prevData => ({
+          ...prevData,
+          [venue]: data
+        }));
+      };
+
+      ws.onerror = (error) => {
+        console.error(`WebSocket error for ${venue}:`, error);
+      };
+
+      ws.onclose = () => {
+        console.log(`Disconnected from ${venue} for ${selectedAsset}`);
+      };
+
+      websockets.current[venue] = ws;
+    });
+
+    // Cleanup function to close WebSockets when component unmounts or selectedAsset changes
+    return () => {
+      Object.values(websockets.current).forEach(ws => ws.close());
+    };
+  }, [selectedAsset]);
+
+  const handleAssetChange = (newAsset) => {
+    setSelectedAsset(newAsset);
+  };
 
   return (
-    <div className="w-full max-w-3xl bg-gray-900 text-white p-6 rounded-lg shadow-lg ">
-      <h2 className="text-2xl font-bold mb-4">Real-Time Prices</h2>
-      <div className="mb-4">
+    <div className="w-full max-w-3xl bg-gray-900 text-white p-6 rounded-lg shadow-lg">
+      <h2 className="text-2xl font-bold mb-4 text-center">Real-Time Prices</h2>
+      <div className="mb-4 flex justify-center">
         <button
           className={`px-4 py-2 rounded-md mr-2 ${activeTab === 'top' ? 'bg-blue-600' : 'bg-gray-700'}`}
           onClick={() => setActiveTab('top')}
@@ -33,42 +74,47 @@ const CryptoPriceDashboard = () => {
             <select
               className="w-full bg-gray-800 text-white p-2 rounded"
               value={selectedAsset}
-              onChange={(e) => setSelectedAsset(e.target.value)}
+              onChange={(e) => handleAssetChange(e.target.value)}
             >
               <option value="BTC">BTC</option>
               <option value="ETH">ETH</option>
               <option value="LTC">LTC</option>
             </select>
           </div>
-          <table className="w-full">
-            <thead>
-              <tr className="text-left border-b border-gray-700">
-                <th className="pb-2">Venue</th>
-                <th className="pb-2">Best Bid</th>
-                <th className="pb-2">Last Price</th>
-                <th className="pb-2">Best Offer</th>
-              </tr>
-              <tr className="text-sm text-gray-400">
-                <th></th>
-                <th>Quantity</th>
-                <th>Price</th>
-                <th>Price</th>
-                <th>Quantity</th>
-              </tr>
-            </thead>
-            <tbody>
-              {venues.map((venue, index) => (
-                <tr key={index} className="border-b border-gray-800">
-                  <td className="py-2">{venue.name}</td>
-                  <td className="py-2">{venue.quantity.toFixed(8)}</td>
-                  <td className="py-2 text-green-500">${venue.bestBid.toFixed(2)}</td>
-                  <td className="py-2">${venue.lastPrice.toFixed(2)}</td>
-                  <td className="py-2 text-red-500">${venue.bestOffer.toFixed(2)}</td>
-                  <td className="py-2">{venue.offerQuantity.toFixed(2)}</td>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="text-left border-b border-gray-700">
+                  <th className="pb-2">Venue</th>
+                  <th className="pb-2">Best Bid</th>
+                  <th className="pb-2">Last Price</th>
+                  <th className="pb-2">Best Offer</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+                <tr className="text-sm text-gray-400">
+                  <th></th>
+                  <th>Quantity</th>
+                  <th>Price</th>
+                  <th>Price</th>
+                  <th>Quantity</th>
+                </tr>
+              </thead>
+              <tbody>
+                {VENUES.map((venue) => {
+                  const data = venueData[venue] || {};
+                  return (
+                    <tr key={venue} className="border-b border-gray-800">
+                      <td className="py-2">{venue}</td>
+                      <td className="py-2">{data.bidQuantity?.toFixed(8) || '-'}</td>
+                      <td className="py-2 text-green-500">${data.bestBid?.toFixed(2) || '-'}</td>
+                      <td className="py-2">${data.lastPrice?.toFixed(2) || '-'}</td>
+                      <td className="py-2 text-red-500">${data.bestOffer?.toFixed(2) || '-'}</td>
+                      <td className="py-2">{data.offerQuantity?.toFixed(2) || '-'}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </>
       )}
     </div>
