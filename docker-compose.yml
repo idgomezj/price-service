@@ -56,12 +56,12 @@ services:
     networks:
       - app-network
 
-  # server:
-  #   container_name: server
-  #   ports:
-  #     - 8000:8000
-  #   networks:
-  #     - app-network
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    networks:
+      - app-network
 
 networks:
   app-network:
