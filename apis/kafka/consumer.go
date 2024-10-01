@@ -25,7 +25,11 @@ var (
 	verbose  = false
 )
 
-func Run(messageChannel chan<- []byte, topic string) {
+func Run(
+	ctx context.Context, 
+	cancel context.CancelFunc, 
+	messageChannel chan<- []byte, 
+	topic string) {
 	keepRunning := true
 	log.Println("Starting a new Sarama consumer")
 
@@ -55,7 +59,7 @@ func Run(messageChannel chan<- []byte, topic string) {
 		messageChannel: messageChannel, // Pass the message channel to the consumer
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+
 	client, err := sarama.NewConsumerGroup(strings.Split(brokers, ","), group, config)
 	if err != nil {
 		log.Panicf("Error creating consumer group client: %v", err)
@@ -71,7 +75,7 @@ func Run(messageChannel chan<- []byte, topic string) {
 				if errors.Is(err, sarama.ErrClosedConsumerGroup) {
 					return
 				}
-				log.Panicf("Error from consumer: %v", err)
+				log.Printf("Error from consumer: %v", err)
 			}
 			// check if context was cancelled, signaling that the consumer should stop
 			if ctx.Err() != nil {
@@ -94,10 +98,10 @@ func Run(messageChannel chan<- []byte, topic string) {
 	for keepRunning {
 		select {
 		case <-ctx.Done():
-			log.Println("terminating: context cancelled")
+			log.Println("terminating kafka: context cancelled")
 			keepRunning = false
 		case <-sigterm:
-			log.Println("terminating: via signal")
+			log.Println("terminating kafka: via signal")
 			keepRunning = false
 		case <-sigusr1:
 			toggleConsumptionFlow(client, &consumptionIsPaused)
