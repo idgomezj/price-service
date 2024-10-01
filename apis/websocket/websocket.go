@@ -13,7 +13,6 @@ import (
 	"apis/kafka"
 )
 
-// WebSocketUpgrader is used to upgrade HTTP connections to WebSocket connections
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		return true
@@ -40,10 +39,9 @@ func transformCryptoData(data []byte) (*CryptoData, error) {
 }
 
 func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
-	// Upgrade the HTTP request to a WebSocket connection
 	wg := &sync.WaitGroup{}
 	messageChannel := make(chan []byte)
-	ctx, cancel := context.WithCancel(context.Background()) // Create a cancelable context
+	ctx, cancel := context.WithCancel(context.Background()) 
 
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -65,10 +63,16 @@ func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		kafka.Run(ctx, cancel, messageChannel, exchange) // Pass the context to kafka.Run
+		kafka.Run(
+			ctx, 
+			cancel, 
+			messageChannel, 
+			exchange,
+			fmt.Sprintf("%v_%v",exchange, ticker),
+		) 
 	}()
 
-	// Handle messages to send via WebSocket
+	
 	wg.Add(1)
 	go func() {
 		defer wg.Done()

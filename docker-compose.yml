@@ -5,6 +5,7 @@ x-environment: &shared-environment
   SYMBOLS: "BTC,ETH,LTC"
   VITE_SYMBOLS: "BTC,ETH,LTC"
   VITE_WEBSOCKET_URL: "ws://localhost:8083/ws"
+  VITE_EXCHANGES: "Binance,OKX,Coinbase"
 
   #-----------------------------------------------
   #-----------   EXCHANGES URLS   ----------------

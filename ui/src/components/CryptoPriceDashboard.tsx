@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 const SYMBOLS = import.meta.env.VITE_SYMBOLS.split(',');
 const WEBSOCKET_URL = import.meta.env.VITE_WEBSOCKET_URL
 
-const VENUES = ['Binance', 'Deribit', 'OKX', 'Coinbase'];
+const VENUES = import.meta.env.VITE_EXCHANGES.split(',');
 
 // Define the type for venue data
 interface VenueData {

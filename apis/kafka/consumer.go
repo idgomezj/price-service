@@ -20,7 +20,6 @@ import (
 var (
 	brokers  = config.KafkaBroker
 	version  = sarama.DefaultVersion.String()
-	group    = "price_service"
 	oldest   = true
 	verbose  = false
 )
@@ -29,7 +28,8 @@ func Run(
 	ctx context.Context, 
 	cancel context.CancelFunc, 
 	messageChannel chan<- []byte, 
-	topic string) {
+	topic string,
+	group string) {
 	keepRunning := true
 	log.Println("Starting a new Sarama consumer")
 
