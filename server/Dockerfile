@@ -19,5 +19,3 @@ RUN pip install --no-cache-dir -r  requirements.txt
 
 # copy project
 COPY . .
-
-CMD ["python", "main.py"]

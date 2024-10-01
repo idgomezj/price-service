@@ -6,7 +6,7 @@ class DeribitPriceTracker(WebSocketPriceTracker):
         super().__init__("DERIBIT", symbols)
 
     def on_open(self, ws):
-        self._logger.info("Connected to Deribit WebSocket")
+        self._logger.info(f"Connected to Deribit WebSocket | Thread [{self._thread_index}]")
         for symbol in self.symbols:
             subscribe_message = {
                     "jsonrpc" : "2.0",
@@ -23,11 +23,18 @@ class DeribitPriceTracker(WebSocketPriceTracker):
             #         }
             #         }
             ws.send(json.dumps(subscribe_message))
-        self._logger.info(f"Subscribed to {', '.join(self.symbols)} on Deribit")
+        self._logger.info(f"Subscribed to {', '.join(self.symbols)} on Deribit | Thread [{self._thread_index}]")
 
     def process_message(self, data):
-        print(data)
-        if 'params' in data and 'data' in data['params']:
-            ticker_data = data['params']['data']
-            self._logger.info(f"Deribit - {ticker_data['instrument_name']}: ${ticker_data['last_price']}")
+        ticker_data = data['result']
+        ticker = ticker_data['instrument_name'].split("-")[0]
+        self._kafka_producer.send( {
+            "ticker": ticker,
+            "best_bid_quantity": ticker_data["best_bid_amount"],
+            "best_bid_price": ticker_data["best_bid_price"],
+            "last_price": ticker_data["last_price"],
+            "best_offer_quantity": ticker_data["best_ask_amount"],
+            "best_offer_price": ticker_data["best_ask_price"],
+        })
+        self._logger.info(f"DERIBIT - {ticker}: ${ticker_data['last_price']}  | Thread [{self._thread_index}]")
 

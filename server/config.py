@@ -5,8 +5,7 @@ from os import environ
 
 
 env_dict ={
-            'PRODUCTION':'env/.env.production',
-
+            'TESTING':'env/.env.production',
         }
 
 class Config(BaseSettings):
@@ -21,9 +20,13 @@ class Config(BaseSettings):
     #-----------------------------------------------
     #-----------------   KAFKA     -----------------
     #-----------------------------------------------
-    KAFKA_BROKER             : str = environ.get('KAFKA_BROKER','')
-    KAFKA_NUM_PARTITIONS     : str = environ.get('KAFKA_NUM_PARTITIONS','')
-    KAFKA_REPLICATION_FACTOR : str = environ.get('KAFKA_REPLICATION_FACTOR','')
+    KAFKA_BROKER              : str = environ.get('KAFKA_BROKER','')
+    KAFKA_RETENTION_MS        : str = environ.get('KAFKA_RETENTION_MS','')
+    KAFKA_CLEANUP_POLICY      : str = environ.get('KAFKA_CLEANUP_POLICY','')
+    KAFKA_COMPRESSION_TYPE    : str = environ.get('KAFKA_COMPRESSION_TYPE','')
+    KAFKA_MIN_INSYNC_REPLICAS : str = environ.get('KAFKA_MIN_INSYNC_REPLICAS','')
+    KAFKA_NUM_PARTITIONS      : int = int(environ.get('KAFKA_NUM_PARTITIONS',1))
+    KAFKA_REPLICATION_FACTOR  : int = int(environ.get('KAFKA_REPLICATION_FACTOR',1))
 
     class Config:
         env_file = env_dict.get(environ.get('ENV','').upper(), 'env/.env.develop')

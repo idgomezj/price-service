@@ -6,15 +6,25 @@ class CoinbasePriceTracker(WebSocketPriceTracker):
         super().__init__("COINBASE", symbols)
 
     def on_open(self, ws):
-        self._logger.info("Connected to Coinbase WebSocket  | Thread [{self.thread_index}]")
+        self._logger.info(f"Connected to Coinbase WebSocket  | Thread [{self._thread_index}]")
         subscribe_message = {
             "type": "subscribe",
             "product_ids": [f"{symbol}-USD" for symbol in self.symbols],
             "channels": ["ticker"]
         }
         ws.send(json.dumps(subscribe_message))
-        self._logger.info(f"Subscribed to {', '.join(self.symbols)} on Coinbase  | Thread [{self.thread_index}]")
+        self._logger.info(f"Subscribed to {', '.join(self.symbols)} on Coinbase  | Thread [{self._thread_index}]")
 
     def process_message(self, data):
         if data['type'] == 'ticker':
-            self._logger.info(f"{data['product_id']}: ${data['price']}  | Thread [{self.thread_index}]")
+            ticker = data["product_id"].split("-")[0]
+            self._kafka_producer.send({
+                "ticker": ticker, 
+                "best_bid_quantity": data["best_bid_size"],
+                "best_bid_price": data["best_bid"],
+                "last_price": data["price"],
+                "best_offer_quantity": data["best_ask_size"],
+                "best_offer_price": data["best_ask"],
+            })
+            self._logger.info(f"{ticker}: ${data['price']}  | Thread [{self._thread_index}]")
+
