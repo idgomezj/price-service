@@ -1,37 +1,25 @@
-import websockets
-import asyncio
-import logging
+from .websocket_price_abstract import WebSocketPriceTracker
 import json
 
-class BinancePriceTracker:
+class BinancePriceTracker(WebSocketPriceTracker):
     def __init__(self, symbols):
-        self.ws_url = "wss://stream.binance.com:9443/ws"
-        self.symbols = [symbol.lower() + "usdt@ticker" for symbol in symbols]
-        self._logger = logging.getLogger(__name__)
+        super().__init__(
+            "BIANCE", 
+            [symbol.lower() + "usdt@ticker" for symbol in symbols]
+        )
 
-    async def connect(self):
-        while True:
-            try:
-                async with websockets.connect(f"{self.ws_url}/{'/'.join(self.symbols)}") as websocket:
-                    self._logger.info("Connected to Binance WebSocket")
-                    await self.receive_messages(websocket)
-            except websockets.exceptions.ConnectionClosed as e:
-                self._logger.error(f"Binance WebSocket connection closed: {e}")
-                await asyncio.sleep(5)
-            except Exception as e:
-                self._logger.error(f"An error occurred: {e}")
-                await asyncio.sleep(5)
 
-    async def receive_messages(self, websocket):
-        while True:
-            try:
-                message = await websocket.recv()
-                data = json.loads(message)
-                self._logger.info(f"Binance - {data['s']}: ${data['c']}")
-            except json.JSONDecodeError as e:
-                self._logger.error(f"Failed to decode Binance message: {e}")
-            except KeyError as e:
-                self._logger.error(f"Unexpected Binance message format: {e}")
-            except Exception as e:
-                self._logger.error(f"Error processing Binance message: {e}")
-                break
+    def on_open(self, ws):
+        self._logger.info("Connected to Binance WebSocket")
+        print("Ivan Ivan"*100)
+        print(self.symbols)
+        subscribe_message = {
+            "method": "SUBSCRIBE",
+            "params": self.symbols,
+            "id": 1
+        }
+        ws.send(json.dumps(subscribe_message))
+        self._logger.info(f"Subscribed to {', '.join(self.symbols)}")
+
+    def process_message(self, data):
+        print(data)

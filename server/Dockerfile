@@ -4,6 +4,7 @@ FROM python:3.10
 WORKDIR /app
 
 ENV TZ=America/New_York
+ENV ENV=PRODUCTION
 
 # Update and install tzdata
 RUN apt-get update 

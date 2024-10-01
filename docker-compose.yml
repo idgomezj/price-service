@@ -7,7 +7,6 @@ services:
       - KAFKA_CFG_NODE_ID=0
       - KAFKA_CFG_PROCESS_ROLES=broker,controller
       - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
-
       - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
       - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
       - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
@@ -21,12 +20,11 @@ services:
     #   - ./volumes/kafka:/bitnami/kafka
     networks:
       - app-network
-
   kafka-ui:
     container_name: kafka-ui
     image: provectuslabs/kafka-ui:latest
     ports:
-      - 8088:8088
+      - 8088:8080
     depends_on:
       - kafka
     environment:
@@ -35,34 +33,6 @@ services:
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
     networks:
       - app-network
-
-  ui:
-    container_name: ui
-    build:
-      context: ./ui
-      dockerfile: Dockerfile
-    ports:
-      - 5173:4173
-    networks:
-      - app-network
-
-  apis:
-    container_name: apis
-    build:
-      context: ./apis
-      dockerfile: Dockerfile
-    ports:
-      - 8080:8080
-    networks:
-      - app-network
-
-  server:
-    build:
-      context: ./server
-      dockerfile: Dockerfile
-    networks:
-      - app-network
-
 networks:
   app-network:
     driver: bridge
