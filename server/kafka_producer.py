@@ -90,6 +90,9 @@ class KafkaProducer():
                         self._logger.info(f"Kafka topic '{topic_name}' created successfully. ")
                     except Exception as e:
                         self._logger.error(f"Failed to create Kafka topic '{topic_name}' : {e}")
+                        if e.args[0].code() == KafkaError.TOPIC_ALREADY_EXISTS: 
+                            self._logger.error("This error does not affect all application healthy")
+                            continue
                         raise
 
         except KafkaError as e:

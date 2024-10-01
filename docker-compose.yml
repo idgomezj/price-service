@@ -67,6 +67,13 @@ services:
     image: provectuslabs/kafka-ui:latest
     ports:
       - 8088:8080
+    restart: on-failure  # Add this line to restart the container on failure
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 10s          
+        max_attempts: 3     
+        window: 60s 
     depends_on:
       kafka:
         condition: service_healthy
@@ -89,6 +96,13 @@ services:
          <<: *shared-environment
     ports:
       - 5173:4173
+    restart: on-failure  # Add this line to restart the container on failure
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 10s          
+        max_attempts: 3     
+        window: 60s 
     networks:
       - app-network
 
@@ -103,6 +117,13 @@ services:
          <<: *shared-environment
     ports:
       - 8083:8080
+    restart: on-failure  # Add this line to restart the container on failure
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 10s          
+        max_attempts: 3     
+        window: 60s 
     networks:
       - app-network
 
@@ -117,6 +138,13 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
+    restart: on-failure  # Add this line to restart the container on failure
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 10s          
+        max_attempts: 3     
+        window: 60s         
     networks:
       - app-network
 

@@ -4,6 +4,8 @@
 
 This project implements a real-time cryptocurrency price service that fetches data from multiple exchanges (Coinbase, Binance, Deribit, and OKX), publishes it to a Kafka message bus, and exposes it via a WebSocket API for consumption by a UI client.
 
+#### Important Note: Please wait a few seconds for the UI to load and become ready.
+
 ## Architecture
 
 The system consists of the following components:
