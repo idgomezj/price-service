@@ -25,6 +25,7 @@ class Config(BaseSettings):
     KAFKA_CLEANUP_POLICY      : str = environ.get('KAFKA_CLEANUP_POLICY','')
     KAFKA_COMPRESSION_TYPE    : str = environ.get('KAFKA_COMPRESSION_TYPE','')
     KAFKA_MIN_INSYNC_REPLICAS : str = environ.get('KAFKA_MIN_INSYNC_REPLICAS','')
+    KAFKA_GROUP_ID            : str = environ.get('KAFKA_GROUP_ID','')
     KAFKA_NUM_PARTITIONS      : int = int(environ.get('KAFKA_NUM_PARTITIONS',1))
     KAFKA_REPLICATION_FACTOR  : int = int(environ.get('KAFKA_REPLICATION_FACTOR',1))
 

@@ -17,10 +17,11 @@ x-environment: &shared-environment
   KAFKA_CLEANUP_POLICY: "delete"
   KAFKA_COMPRESSION_TYPE: "lz4"
   KAFKA_MIN_INSYNC_REPLICAS: "1"
+  KAFKA_GROUP_ID: "price_service"
 
 services:
   kafka:
-    image: bitnami/kafka
+    image: bitnami/kafka:3.8.0
     ports:
       - 9094:9094
     environment:
@@ -76,23 +77,23 @@ services:
       context: ./apis
       dockerfile: Dockerfile
     ports:
-      - 8080:8080
+      - 8083:8080
     networks:
       - app-network
 
-  server:
-    build:
-      context: ./server
-      dockerfile: Dockerfile
-    #command: ["sh", "-c", "while true; do echo 'Waiting'; sleep 5; done"]
-    command: ["python", "main.py"]
-    environment:
-      <<: *shared-environment
-    depends_on:
-      kafka:
-        condition: service_healthy
-    networks:
-      - app-network
+  # server:
+  #   build:
+  #     context: ./server
+  #     dockerfile: Dockerfile
+  #   #command: ["sh", "-c", "while true; do echo 'Waiting'; sleep 5; done"]
+  #   command: ["python", "main.py"]
+  #   environment:
+  #     <<: *shared-environment
+  #   depends_on:
+  #     kafka:
+  #       condition: service_healthy
+  #   networks:
+  #     - app-network
 
 networks:
   app-network:

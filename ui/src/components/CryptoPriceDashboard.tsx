@@ -104,11 +104,11 @@ const CryptoPriceDashboard = () => {
                   return (
                     <tr key={venue} className="border-b border-gray-800">
                       <td className="py-2">{venue}</td>
-                      <td className="py-2">{data.bidQuantity?.toFixed(8) || '-'}</td>
-                      <td className="py-2 text-green-500">${data.bestBid?.toFixed(2) || '-'}</td>
-                      <td className="py-2">${data.lastPrice?.toFixed(2) || '-'}</td>
-                      <td className="py-2 text-red-500">${data.bestOffer?.toFixed(2) || '-'}</td>
-                      <td className="py-2">{data.offerQuantity?.toFixed(2) || '-'}</td>
+                      <td className="py-2">{data.best_bid_quantity || '-'}</td>
+                      <td className="py-2 text-green-500">${data.best_bid_price || '-'}</td>
+                      <td className="py-2">${data.last_price || '-'}</td>
+                      <td className="py-2 text-red-500">${data.best_offer_price || '-'}</td>
+                      <td className="py-2">{data.best_offer_quantity || '-'}</td>
                     </tr>
                   );
                 })}

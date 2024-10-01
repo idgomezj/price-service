@@ -18,15 +18,25 @@ var upgrader = websocket.Upgrader{
 }
 
 type CryptoData struct {
-	BestBid      float64 `json:"bestBid"`
-	LastPrice    float64 `json:"lastPrice"`
-	BestOffer    float64 `json:"bestOffer"`
-	BidQuantity  float64 `json:"bidQuantity"`
-	OfferQuantity float64 `json:"offerQuantity"`
+	Ticker           string  `json:"ticker"`
+	BestBidQuantity  string  `json:"best_bid_quantity"`
+	BestBidPrice     string  `json:"best_bid_price"`
+	LastPrice        string  `json:"last_price"`
+	BestOfferQuantity string  `json:"best_offer_quantity"`
+	BestOfferPrice   string  `json:"best_offer_price"`
 }
 
 
-func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
+func transformCryptoData(data []byte) (*CryptoData, error) {
+	var cryptoData CryptoData
+	err := json.Unmarshal(data, &cryptoData)
+	if err != nil {
+		return nil, err
+	}
+	return &cryptoData, nil
+}
+
+func HandleWebSocket(w http.ResponseWriter, r *http.Request, messageChannel <-chan []byte) {
 	// Upgrade the HTTP request to a WebSocket connection
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -46,14 +56,13 @@ func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	for {
 		select {
 			case <-ticker.C:
-				// Generate mock data for the crypto asset
-				data := CryptoData{
-					BestBid:      50000.12 + float64(time.Now().UnixNano()%1000)/100,
-					LastPrice:    50500.67 + float64(time.Now().UnixNano()%1000)/100,
-					BestOffer:    51000.89 + float64(time.Now().UnixNano()%1000)/100,
-					BidQuantity:  1.23 + float64(time.Now().UnixNano()%100)/100,
-					OfferQuantity: 2.34 + float64(time.Now().UnixNano()%100)/100,
+				data_bytes := <-messageChannel
+				data, err := transformCryptoData(data_bytes)
+				if err != nil {
+					fmt.Println("Error:", err)
+					return
 				}
+				fmt.Println(data)
 
 				// Send the mock data as JSON
 				message, err := json.Marshal(data)

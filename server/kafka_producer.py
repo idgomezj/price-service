@@ -35,7 +35,7 @@ class KafkaProducer():
             self._logger.info("Setting up Kafka Consumer ")
             self._consumer = Consumer({
                 'bootstrap.servers': self._config.KAFKA_BROKER,
-                'group.id': self._topic,
+                'group.id': self._config.KAFKA_GROUP_ID,
                 'auto.offset.reset': 'earliest',
                 'enable.auto.commit': False  # Disable auto-commit to control the offset manually
             })
