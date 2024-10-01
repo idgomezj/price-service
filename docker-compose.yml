@@ -1,8 +1,15 @@
 x-environment: &shared-environment
   #-----------------------------------------------
+  #---------   GENERAL INFORMATION   -------------
+  #-----------------------------------------------
+  SYMBOLS: "BTC,ETH,LTC"
+  VITE_SYMBOLS: "BTC,ETH,LTC"
+  VITE_WEBSOCKET_URL: "ws://localhost:8083/ws"
+
+  #-----------------------------------------------
   #-----------   EXCHANGES URLS   ----------------
   #-----------------------------------------------
-  BIANCE_URL:  "wss://fstream.binance.com/ws"
+  BINANCE_URL:  "wss://fstream.binance.com/ws"
   COINBASE_URL: "wss://ws-feed.exchange.coinbase.com"
   DERIBIT_URL: "wss://www.deribit.com/ws/api/v2"
   OKX_URL: "wss://ws.okx.com:8443/ws/v5/public"
@@ -66,6 +73,11 @@ services:
     build:
       context: ./ui
       dockerfile: Dockerfile
+    command: ["./entrypoint.sh"]
+    depends_on:
+      - apis
+    environment:
+         <<: *shared-environment
     ports:
       - 5173:4173
     networks:
@@ -76,24 +88,28 @@ services:
     build:
       context: ./apis
       dockerfile: Dockerfile
+    depends_on:
+      - server
+    environment:
+         <<: *shared-environment
     ports:
       - 8083:8080
     networks:
       - app-network
 
-  # server:
-  #   build:
-  #     context: ./server
-  #     dockerfile: Dockerfile
-  #   #command: ["sh", "-c", "while true; do echo 'Waiting'; sleep 5; done"]
-  #   command: ["python", "main.py"]
-  #   environment:
-  #     <<: *shared-environment
-  #   depends_on:
-  #     kafka:
-  #       condition: service_healthy
-  #   networks:
-  #     - app-network
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    #command: ["sh", "-c", "while true; do echo 'Waiting'; sleep 5; done"]
+    command: ["python", "main.py"]
+    environment:
+      <<: *shared-environment
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - app-network
 
 networks:
   app-network:

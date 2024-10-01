@@ -9,9 +9,13 @@ import time
 
 class WebSocketPriceTracker(abc.ABC):
     
-    def __init__(self, base_url, symbols):
+    def __init__(self, base_url):
         self.ws_url = config.get(f"{base_url.upper()}_URL")
-        self.symbols = symbols
+        self.symbols = (
+            config.SYMBOLS.split(',') 
+            if base_url not in ["binance"] 
+            else [symbol.lower() + "usdt@bookTicker" for symbol in config.SYMBOLS.split(',')]
+        )
         self.ws = None
         self._thread_index = None
         self.should_reconnect = True

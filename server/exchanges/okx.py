@@ -3,8 +3,8 @@ import json
 
 
 class OKXPriceTracker(WebSocketPriceTracker):
-    def __init__(self, symbols):
-        super().__init__("okx", symbols)
+    def __init__(self):
+        super().__init__("okx")
 
     def on_open(self, ws):
         self._logger.info(f"Connected to OKX WebSocket | Thread [{self._thread_index}]")

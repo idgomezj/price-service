@@ -32,15 +32,17 @@ class PriceTracker:
 
 
 def main():
-    symbols = ["BTC", "ETH", "LTC"]
+    price_tracker = PriceTracker([
+        CoinbasePriceTracker(),
+        BinancePriceTracker(),
+        DeribitPriceTracker(), 
+        OKXPriceTracker(),
+    ])
 
-    coinbase_tracker = CoinbasePriceTracker(symbols)
-    binance_tracker = BinancePriceTracker(symbols)
-    deribit_tracker = DeribitPriceTracker(symbols)
-    okx_tracker = OKXPriceTracker(symbols)
+    # price_tracker = PriceTracker([
+    #     OKXPriceTracker()
+    # ])
 
-    #price_tracker = PriceTracker([coinbase_tracker, binance_tracker, deribit_tracker, okx_tracker])
-    price_tracker = PriceTracker([coinbase_tracker, binance_tracker, okx_tracker])
     price_tracker.connect_to_all()
 
 if __name__ == "__main__":

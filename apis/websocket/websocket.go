@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"sync"
 	"strings"
 	"net/http"
 
 
 	"github.com/gorilla/websocket"
+	"apis/kafka"
 )
 
 // WebSocketUpgrader is used to upgrade HTTP connections to WebSocket connections
@@ -38,8 +40,10 @@ func transformCryptoData(data []byte) (*CryptoData, error) {
 	return &cryptoData, nil
 }
 
-func HandleWebSocket(w http.ResponseWriter, r *http.Request, messageChannel <-chan []byte) {
+func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	// Upgrade the HTTP request to a WebSocket connection
+	wg := &sync.WaitGroup{}
+	messageChannel := make(chan []byte)
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println("Failed to upgrade:", err)
@@ -56,31 +60,44 @@ func HandleWebSocket(w http.ResponseWriter, r *http.Request, messageChannel <-ch
 	exchange := splitStr[0]
     ticker := strings.ToUpper(splitStr[1])
 
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		kafka.Run(messageChannel, exchange)
+	}()
 
-	for {
-			data_bytes := <-messageChannel
-			data, err := transformCryptoData(data_bytes)
-			fmt.Println(data)
-			fmt.Println(exchange)
-			fmt.Println(ticker)
-			if data.Exchange != exchange || data.Ticker != ticker {
-				fmt.Println("Data not match")
-				continue
-			}
-			if err != nil {
-				fmt.Println("Error:", err)
-				return
-			}
-			fmt.Println(data)
-			// Send the mock data as JSON
-			message, err := json.Marshal(data)
-			if err != nil {
-				log.Println("Error marshalling JSON:", err)
-				continue
-			}
-			if err := ws.WriteMessage(websocket.TextMessage, message); err != nil {
-				log.Println("Error writing message:", err)
-				return
-			}
-	}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for {
+				data_bytes := <-messageChannel
+				data, err := transformCryptoData(data_bytes)
+				if err != nil {
+					fmt.Println("Error:", err)
+					return
+				}
+				fmt.Println(data)
+				fmt.Println(exchange)
+				fmt.Println(ticker)
+				if  data.Ticker != ticker {
+					fmt.Println("Data not match")
+					continue
+				}
+
+				fmt.Println(data)
+				// Send the mock data as JSON
+				message, err := json.Marshal(data)
+				if err != nil {
+					log.Println("Error marshalling JSON:", err)
+					continue
+				}
+				if err := ws.WriteMessage(websocket.TextMessage, message); err != nil {
+					log.Println("Error writing message:", err)
+					return
+				}
+		}
+	}()
+
+	// Wait for both goroutines to finish
+	wg.Wait()
 }

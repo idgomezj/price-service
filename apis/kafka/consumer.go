@@ -12,19 +12,20 @@ import (
 	"syscall"
 
 	"github.com/IBM/sarama"
+
+	"apis/config"
 )
 
 // Sarama configuration options
 var (
-	brokers  = "localhost:9094"
+	brokers  = config.KafkaBroker
 	version  = sarama.DefaultVersion.String()
 	group    = "price_service"
-	topics   = "okx"
 	oldest   = true
 	verbose  = false
 )
 
-func Run(messageChannel chan<- []byte) {
+func Run(messageChannel chan<- []byte, topic string) {
 	keepRunning := true
 	log.Println("Starting a new Sarama consumer")
 
@@ -66,7 +67,7 @@ func Run(messageChannel chan<- []byte) {
 	go func() {
 		defer wg.Done()
 		for {
-			if err := client.Consume(ctx, strings.Split(topics, ","), &consumer); err != nil {
+			if err := client.Consume(ctx, strings.Split(topic, ","), &consumer); err != nil {
 				if errors.Is(err, sarama.ErrClosedConsumerGroup) {
 					return
 				}
@@ -82,6 +83,7 @@ func Run(messageChannel chan<- []byte) {
 
 	<-consumer.ready // Await till the consumer has been set up
 	log.Println("Sarama consumer up and running!...")
+	log.Printf("Listening Topic [ %v ]\n", topic)
 
 	sigusr1 := make(chan os.Signal, 1)
 	signal.Notify(sigusr1, syscall.SIGUSR1)

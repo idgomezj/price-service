@@ -2,8 +2,8 @@ from .websocket_price_abstract import WebSocketPriceTracker
 import json
 
 class DeribitPriceTracker(WebSocketPriceTracker):
-    def __init__(self, symbols):
-        super().__init__("deribit", symbols)
+    def __init__(self):
+        super().__init__("deribit")
 
     def on_open(self, ws):
         self._logger.info(f"Connected to Deribit WebSocket | Thread [{self._thread_index}]")

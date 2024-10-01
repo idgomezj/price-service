@@ -2,8 +2,8 @@ from .websocket_price_abstract import WebSocketPriceTracker
 import json
 
 class CoinbasePriceTracker(WebSocketPriceTracker):
-    def __init__(self, symbols):
-        super().__init__("coinbase", symbols)
+    def __init__(self):
+        super().__init__("coinbase")
 
     def on_open(self, ws):
         self._logger.info(f"Connected to Coinbase WebSocket  | Thread [{self._thread_index}]")
@@ -28,4 +28,3 @@ class CoinbasePriceTracker(WebSocketPriceTracker):
                 "best_offer_price": data["best_ask"],
             })
             self._logger.info(f"{ticker}: ${data['price']}  | Thread [{self._thread_index}]")
-

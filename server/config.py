@@ -1,18 +1,23 @@
 from pydantic_settings import BaseSettings
-from typing import Literal, List
 import os
 from os import environ
 
 
 env_dict ={
-            'TESTING':'env/.env.production',
+            'TESTING':'env/.env.testing',
         }
 
 class Config(BaseSettings):
     #-----------------------------------------------
+    #---------   GENERAL INFORMATION   -------------
+    #-----------------------------------------------
+    SYMBOLS : str = environ.get('SYMBOLS','BTC')
+
+
+    #-----------------------------------------------
     #-----------   EXCHANGES URLS   ----------------
     #-----------------------------------------------
-    BIANCE_URL    : str = environ.get('BIANCE_URL','')
+    BINANCE_URL   : str = environ.get('BINANCE_URL','')
     COINBASE_URL  : str = environ.get('COINBASE_URL','')
     DERIBIT_URL   : str = environ.get('DERIBIT_URL','')
     OKX_URL       : str = environ.get('OKX_URL','')

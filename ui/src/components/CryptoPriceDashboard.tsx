@@ -1,12 +1,24 @@
 import { useState, useEffect, useRef } from 'react';
 
-const VENUES = ['Binance', 'Deribit', 'OKX'];
+const SYMBOLS = import.meta.env.VITE_SYMBOLS.split(',');
+const WEBSOCKET_URL = import.meta.env.VITE_WEBSOCKET_URL
+
+const VENUES = ['Binance', 'Deribit', 'OKX', 'Coinbase'];
+
+// Define the type for venue data
+interface VenueData {
+  best_bid_quantity?: number;
+  best_bid_price?: number;
+  last_price?: number;
+  best_offer_price?: number;
+  best_offer_quantity?: number;
+}
 
 const CryptoPriceDashboard = () => {
   const [activeTab, setActiveTab] = useState('top');
-  const [selectedAsset, setSelectedAsset] = useState('BTC');
-  const [venueData, setVenueData] = useState({});
-  const websockets = useRef({});
+  const [selectedAsset, setSelectedAsset] = useState(SYMBOLS[0]);
+  const [venueData, setVenueData] = useState<Record<string, VenueData>>({});
+  const websockets = useRef<Record<string, WebSocket>>({}); // Explicitly type websockets
 
   useEffect(() => {
     // Close all existing WebSocket connections
@@ -15,7 +27,7 @@ const CryptoPriceDashboard = () => {
 
     // Create new WebSocket connections for each venue
     VENUES.forEach(venue => {
-      const ws = new WebSocket(`ws://localhost:8080/ws/${venue.toLowerCase()}/${selectedAsset.toLowerCase()}`);
+      const ws = new WebSocket(`${WEBSOCKET_URL}/${venue.toLowerCase()}/${selectedAsset.toLowerCase()}`);
       
       ws.onopen = () => {
         console.log(`Connected to ${venue} for ${selectedAsset}`);
@@ -38,7 +50,7 @@ const CryptoPriceDashboard = () => {
         console.log(`Disconnected from ${venue} for ${selectedAsset}`);
       };
 
-      websockets.current[venue] = ws;
+      websockets.current[venue] = ws; // Store the WebSocket connection in websockets
     });
 
     // Cleanup function to close WebSockets when component unmounts or selectedAsset changes
@@ -47,12 +59,12 @@ const CryptoPriceDashboard = () => {
     };
   }, [selectedAsset]);
 
-  const handleAssetChange = (newAsset) => {
+  const handleAssetChange = (newAsset: string) => {
     setSelectedAsset(newAsset);
   };
 
   return (
-    <div className="w-full max-w-3xl bg-gray-900 text-white p-6 rounded-lg shadow-lg">
+    <div className="w-full max-w-4xl bg-gray-900 text-white p-6 rounded-lg shadow-lg">
       <h2 className="text-2xl font-bold mb-4 text-center">Real-Time Prices</h2>
       <div className="mb-4 flex justify-center">
         <button
@@ -76,9 +88,12 @@ const CryptoPriceDashboard = () => {
               value={selectedAsset}
               onChange={(e) => handleAssetChange(e.target.value)}
             >
-              <option value="BTC">BTC</option>
-              <option value="ETH">ETH</option>
-              <option value="LTC">LTC</option>
+              {
+                SYMBOLS.map((symbol) =>{
+                  return <option value={symbol}>{symbol}</option>
+                })
+              }
+              
             </select>
           </div>
           <div className="overflow-x-auto">
@@ -86,16 +101,17 @@ const CryptoPriceDashboard = () => {
               <thead>
                 <tr className="text-left border-b border-gray-700">
                   <th className="pb-2">Venue</th>
-                  <th className="pb-2">Best Bid</th>
+                  <th colSpan={2} className="pb-2 pl-20">Best Bid</th>
                   <th className="pb-2">Last Price</th>
-                  <th className="pb-2">Best Offer</th>
+                  <th colSpan={2} className="pb-2 pl-16">Best Offer</th>
                 </tr>
                 <tr className="text-sm text-gray-400">
-                  <th></th>
-                  <th>Quantity</th>
-                  <th>Price</th>
-                  <th>Price</th>
-                  <th>Quantity</th>
+                  <th className="w-1/6 text-left"></th>
+                  <th className="w-1/6 text-left">Quantity</th>
+                  <th className="w-1/6 text-left">Price</th>
+                  <th className="w-1/6 text-left"></th>
+                  <th className="w-1/6 text-left">Price</th>
+                  <th className="w-1/6 text-left">Quantity</th>
                 </tr>
               </thead>
               <tbody>
@@ -105,9 +121,15 @@ const CryptoPriceDashboard = () => {
                     <tr key={venue} className="border-b border-gray-800">
                       <td className="py-2">{venue}</td>
                       <td className="py-2">{data.best_bid_quantity || '-'}</td>
-                      <td className="py-2 text-green-500">${data.best_bid_price || '-'}</td>
-                      <td className="py-2">${data.last_price || '-'}</td>
-                      <td className="py-2 text-red-500">${data.best_offer_price || '-'}</td>
+                      <td className="py-2 text-green-500">{data.best_bid_price ? 
+                                                            new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(data.best_bid_price) : 
+                                                            '-'}</td>
+                      <td className="py-2">{data.last_price ? 
+                                                            new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(data.last_price) : 
+                                                            '-'}</td>
+                      <td className="py-2 text-red-500">{data.best_offer_price ? 
+                                                            new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(data.best_offer_price) : 
+                                                            '-'}</td>
                       <td className="py-2">{data.best_offer_quantity || '-'}</td>
                     </tr>
                   );
