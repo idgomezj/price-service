@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 	"net/http"
-	"time"
+
 
 	"github.com/gorilla/websocket"
 )
@@ -18,12 +19,13 @@ var upgrader = websocket.Upgrader{
 }
 
 type CryptoData struct {
-	Ticker           string  `json:"ticker"`
-	BestBidQuantity  string  `json:"best_bid_quantity"`
-	BestBidPrice     string  `json:"best_bid_price"`
-	LastPrice        string  `json:"last_price"`
+	Exchange 		  string  `json:"exchange"`
+	Ticker            string  `json:"ticker"`
+	BestBidQuantity   string  `json:"best_bid_quantity"`
+	BestBidPrice      string  `json:"best_bid_price"`
+	LastPrice         string  `json:"last_price"`
 	BestOfferQuantity string  `json:"best_offer_quantity"`
-	BestOfferPrice   string  `json:"best_offer_price"`
+	BestOfferPrice    string  `json:"best_offer_price"`
 }
 
 
@@ -49,31 +51,36 @@ func HandleWebSocket(w http.ResponseWriter, r *http.Request, messageChannel <-ch
 	venue := r.URL.Path[len("/ws/"):]
 	fmt.Printf("Client connected to venue: %s\n", venue)
 
-	// Simulate sending crypto price data every second
-	ticker := time.NewTicker(1 * time.Second)
-	defer ticker.Stop()
+	splitStr := strings.Split(venue, "/")
+
+	exchange := splitStr[0]
+    ticker := strings.ToUpper(splitStr[1])
+
 
 	for {
-		select {
-			case <-ticker.C:
-				data_bytes := <-messageChannel
-				data, err := transformCryptoData(data_bytes)
-				if err != nil {
-					fmt.Println("Error:", err)
-					return
-				}
-				fmt.Println(data)
-
-				// Send the mock data as JSON
-				message, err := json.Marshal(data)
-				if err != nil {
-					log.Println("Error marshalling JSON:", err)
-					continue
-				}
-				if err := ws.WriteMessage(websocket.TextMessage, message); err != nil {
-					log.Println("Error writing message:", err)
-					return
-				}
-		}
+			data_bytes := <-messageChannel
+			data, err := transformCryptoData(data_bytes)
+			fmt.Println(data)
+			fmt.Println(exchange)
+			fmt.Println(ticker)
+			if data.Exchange != exchange || data.Ticker != ticker {
+				fmt.Println("Data not match")
+				continue
+			}
+			if err != nil {
+				fmt.Println("Error:", err)
+				return
+			}
+			fmt.Println(data)
+			// Send the mock data as JSON
+			message, err := json.Marshal(data)
+			if err != nil {
+				log.Println("Error marshalling JSON:", err)
+				continue
+			}
+			if err := ws.WriteMessage(websocket.TextMessage, message); err != nil {
+				log.Println("Error writing message:", err)
+				return
+			}
 	}
 }

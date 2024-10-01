@@ -3,7 +3,7 @@ import json
 
 class DeribitPriceTracker(WebSocketPriceTracker):
     def __init__(self, symbols):
-        super().__init__("DERIBIT", symbols)
+        super().__init__("deribit", symbols)
 
     def on_open(self, ws):
         self._logger.info(f"Connected to Deribit WebSocket | Thread [{self._thread_index}]")
@@ -29,6 +29,7 @@ class DeribitPriceTracker(WebSocketPriceTracker):
         ticker_data = data['result']
         ticker = ticker_data['instrument_name'].split("-")[0]
         self._kafka_producer.send( {
+            "exchange":"deribit",
             "ticker": ticker,
             "best_bid_quantity": ticker_data["best_bid_amount"],
             "best_bid_price": ticker_data["best_bid_price"],

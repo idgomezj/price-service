@@ -19,7 +19,7 @@ var (
 	brokers  = "localhost:9094"
 	version  = sarama.DefaultVersion.String()
 	group    = "price_service"
-	topics   = "OKX"
+	topics   = "okx"
 	oldest   = true
 	verbose  = false
 )

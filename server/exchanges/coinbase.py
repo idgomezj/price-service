@@ -3,7 +3,7 @@ import json
 
 class CoinbasePriceTracker(WebSocketPriceTracker):
     def __init__(self, symbols):
-        super().__init__("COINBASE", symbols)
+        super().__init__("coinbase", symbols)
 
     def on_open(self, ws):
         self._logger.info(f"Connected to Coinbase WebSocket  | Thread [{self._thread_index}]")
@@ -19,6 +19,7 @@ class CoinbasePriceTracker(WebSocketPriceTracker):
         if data['type'] == 'ticker':
             ticker = data["product_id"].split("-")[0]
             self._kafka_producer.send({
+                "exchange":"coinbase",
                 "ticker": ticker, 
                 "best_bid_quantity": data["best_bid_size"],
                 "best_bid_price": data["best_bid"],

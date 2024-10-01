@@ -4,7 +4,7 @@ import json
 class BinancePriceTracker(WebSocketPriceTracker):
     def __init__(self, symbols):
         super().__init__(
-            "BIANCE", 
+            "biance", 
             [symbol.lower() + "usdt@ticker" for symbol in symbols]
         )
 
@@ -22,6 +22,7 @@ class BinancePriceTracker(WebSocketPriceTracker):
     def process_message(self, data):
         ticker = data["s"].split("USDT")[0]
         self._kafka_producer.send({
+            "exchange":"biance",
             "ticker": ticker,                 # Extracting ticker value
             "best_bid_quantity": data["Q"],       # Quantity of the last trade
             "best_bid_price": data["c"],          # Last traded price

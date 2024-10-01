@@ -4,7 +4,7 @@ import json
 
 class OKXPriceTracker(WebSocketPriceTracker):
     def __init__(self, symbols):
-        super().__init__("OKX", symbols)
+        super().__init__("okx", symbols)
 
     def on_open(self, ws):
         self._logger.info(f"Connected to OKX WebSocket | Thread [{self._thread_index}]")
@@ -20,6 +20,7 @@ class OKXPriceTracker(WebSocketPriceTracker):
             ticker_data = data['data'][0]
             ticker = ticker_data['instId'].split("-")[0]
             self._kafka_producer.send( {
+                "exchange":"okx",
                 "ticker": ticker,
                 "best_bid_quantity": ticker_data["bidSz"],
                 "best_bid_price": ticker_data["bidPx"],

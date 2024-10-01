@@ -10,7 +10,7 @@ import time
 class WebSocketPriceTracker(abc.ABC):
     
     def __init__(self, base_url, symbols):
-        self.ws_url = config.get(f"{base_url}_URL")
+        self.ws_url = config.get(f"{base_url.upper()}_URL")
         self.symbols = symbols
         self.ws = None
         self._thread_index = None
