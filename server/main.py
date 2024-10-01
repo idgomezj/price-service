@@ -40,7 +40,7 @@ def main():
     ])
 
     # price_tracker = PriceTracker([
-    #     OKXPriceTracker()
+    #     CoinbasePriceTracker()
     # ])
 
     price_tracker.connect_to_all()

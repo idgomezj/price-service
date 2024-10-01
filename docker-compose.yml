@@ -16,6 +16,14 @@ x-environment: &shared-environment
   OKX_URL: "wss://ws.okx.com:8443/ws/v5/public"
 
   #-----------------------------------------------
+  #-------   EXCHANGES URLS SANDBOX   ------------
+  #-----------------------------------------------
+  # BINANCE_URL: "wss://fstream.binance.com/ws"
+  # COINBASE_URL: "wss://ws-feed-public.sandbox.exchange.coinbase.com"
+  # DERIBIT_URL: "wss://www.deribit.com/ws/api/v2"
+  # OKX_URL: "wss://ws.okx.com:8443/ws/v5/public"
+
+  #-----------------------------------------------
   #-----------------   KAFKA     -----------------
   #-----------------------------------------------
   KAFKA_BROKER: "kafka:9092"

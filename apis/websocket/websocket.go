@@ -10,7 +10,9 @@ import (
 	"sync"
 
 	"github.com/gorilla/websocket"
+
 	"apis/kafka"
+	"apis/config"
 )
 
 var upgrader = websocket.Upgrader{
@@ -20,13 +22,46 @@ var upgrader = websocket.Upgrader{
 }
 
 type CryptoData struct {
-	Exchange          string  `json:"exchange"`
-	Ticker            string  `json:"ticker"`
-	BestBidQuantity   string  `json:"best_bid_quantity"`
-	BestBidPrice      string  `json:"best_bid_price"`
-	LastPrice         string  `json:"last_price"`
-	BestOfferQuantity string  `json:"best_offer_quantity"`
-	BestOfferPrice    string  `json:"best_offer_price"`
+	Exchange          string `json:"exchange"`
+	Ticker            string `json:"ticker"`
+	BestBidQuantity   string `json:"best_bid_quantity"`
+	BestBidPrice      string `json:"best_bid_price"`
+	LastPrice         string `json:"last_price"`
+	BestOfferQuantity string `json:"best_offer_quantity"`
+	BestOfferPrice    string `json:"best_offer_price"`
+}
+
+type ChannelMap map[string]chan []byte
+
+var (
+	ExchangeChans = make(ChannelMap)
+	cancel        context.CancelFunc
+	ctx           context.Context
+	wg            sync.WaitGroup
+)
+
+func init() {
+	ctx, cancel = context.WithCancel(context.Background())
+
+	fmt.Println("Init Websocket")
+	fmt.Println("Creating kafka consumer for exchanges: ", config.Exchanges)
+
+	// Create a channel for each exchange and store it in the map
+	for _, exchange := range config.Exchanges {
+		ExchangeChans[exchange] = make(chan []byte)
+
+		wg.Add(1)
+		go func(exchange string) {
+			defer wg.Done()
+			kafka.Run(
+				ctx,
+				cancel,
+				ExchangeChans[exchange],
+				exchange,
+				exchange,
+			)
+		}(exchange)
+	}
 }
 
 func transformCryptoData(data []byte) (*CryptoData, error) {
@@ -39,54 +74,44 @@ func transformCryptoData(data []byte) (*CryptoData, error) {
 }
 
 func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
-	wg := &sync.WaitGroup{}
-	messageChannel := make(chan []byte)
-	ctx, cancel := context.WithCancel(context.Background()) 
-
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println("Failed to upgrade:", err)
-		cancel()
+		return
 	}
-	defer func() {
-		cancel() // Ensure Kafka is stopped when the WebSocket is closed
-		ws.Close()
-	}()
+	defer ws.Close()
 
 	venue := r.URL.Path[len("/ws/"):]
-
 	splitStr := strings.Split(venue, "/")
+	if len(splitStr) < 2 {
+		log.Println("Invalid URL path")
+		return
+	}
 	exchange := splitStr[0]
 	ticker := strings.ToUpper(splitStr[1])
 
-	// Start the Kafka consumer in a goroutine
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		kafka.Run(
-			ctx, 
-			cancel, 
-			messageChannel, 
-			exchange,
-			fmt.Sprintf("%v_%v",exchange, ticker),
-		) 
-	}()
+	ch, ok := ExchangeChans[exchange]
+	if !ok {
+		log.Printf("Exchange %s not found", exchange)
+		return
+	}
 
-	
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		for {
 			select {
-			case dataBytes := <-messageChannel:
+			case dataBytes := <-ch:
 				data, err := transformCryptoData(dataBytes)
 				if err != nil {
-					fmt.Println("Error:", err)
-					return
+					log.Println("Error:", err)
+					continue
 				}
 
 				if data.Ticker != ticker {
-					fmt.Println("Data does not match ticker")
 					continue
 				}
 
@@ -96,12 +121,11 @@ func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 					continue
 				}
 
-				// Send data over WebSocket
 				if err := ws.WriteMessage(websocket.TextMessage, message); err != nil {
 					log.Println("Error writing message:", err)
 					return
 				}
-			case <-ctx.Done(): // Stop processing when context is canceled
+			case <-ctx.Done():
 				return
 			}
 		}
@@ -112,11 +136,7 @@ func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 		_, _, err := ws.ReadMessage()
 		if err != nil {
 			log.Println("WebSocket closed:", err)
-			cancel() // Cancel the Kafka process when WebSocket is closed
 			break
 		}
 	}
-
-	// Wait for both goroutines to finish
-	wg.Wait()
 }
